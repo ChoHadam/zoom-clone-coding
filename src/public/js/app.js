@@ -1,6 +1,6 @@
-// https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket
+const messageList = document.querySelector("ul");
+const messageForm = document.querySelector("form");
 
-// const socket = new WebSocket("ws://localhost:3000");
 const socket = new WebSocket(`ws://${window.location.host}`); // 여기서의 socket은, 서버로의 연결을 뜻한다.
 
 function handleOpen() {
@@ -19,6 +19,12 @@ socket.addEventListener("open", handleOpen);
 socket.addEventListener("message", handleMessage);
 socket.addEventListener("close", handleClose);
 
-setTimeout(() => {
-    socket.send("hello from the Browser!!");
-}, 10000);
+
+function handleSubmit(event) {
+    event.preventDefault();
+    const input = messageForm.querySelector("input");
+    socket.send(input.value);
+    input.value = "";
+}
+
+messageForm.addEventListener("submit", handleSubmit);

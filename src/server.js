@@ -19,15 +19,15 @@ function onSocketClose() {
     console.log("Disconnected from Browser ❌")
 }
 
-function onSocketMessage(message) {
-     console.log(message);
-}
+const sockets = []; // 연결된 소켓들을 저장하는 메모리 저장소.
 
 function handleConnection(socket) { //여기서 소켓은 서버와 연결된 브라우저이다.
+    sockets.push(socket);
     console.log("Connected to Browser ✔️");
     socket.on("close", onSocketClose);
-    socket.on("message", onSocketMessage);
-    socket.send("hello!!!");
+    socket.on("message", (message) => {
+        sockets.forEach(aSocket => aSocket.send(message));
+    });
 }
 
 wss.on("connection", handleConnection); // on 메소드가 브라우제에서 벡엔드로 연결된 사람의 정보를 제공해주는데, 소켓에 담겨온다.
