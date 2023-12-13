@@ -1,53 +1,15 @@
-const messageList = document.querySelector("ul");
-const nicknameForm = document.querySelector("#nickname");
-const chatForm = document.querySelector("#chat");
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
 
-const socket = new WebSocket(`ws://${window.location.host}`); // 여기서의 socket은, 서버로의 연결을 뜻한다.
+const socket = io(); //백엔드의 socket.io를 프론트와 연결한다. io 메서드가 알아서 socket.io를 실행하고 있는 백엔드 서버를 찾는다. (설치는 view파일에서 했다.)
 
-socket.addEventListener("open", handleOpen);
-socket.addEventListener("message", (message)=> {
-    const li = document.createElement("li");
-    li.innerText = message.data;
-    messageList.append(li);
-});
-socket.addEventListener("close", handleClose);
+form.addEventListener("submit", handleRoomSubmit);
 
-nicknameForm.addEventListener("submit", handleNicknameSubmit);
-chatForm.addEventListener("submit", handleChatSubmit);
-
-
-function handleOpen() {
-    console.log("Connected to Server ✔️");
-}
-
-function handleClose() {
-    console.log("Disconnected from Server ❌");
-}
-
-function handleNicknameSubmit(event) {
+function handleRoomSubmit(event) {
     event.preventDefault();
-    const input = nicknameForm.querySelector("input");
-    socket.send( // 왜 string data만 취급할까? 어떤 언어를 사용하는 서버가 받을지 모르는데, 특정 언어에 의존한 객체를 보내는건 좋지 않아. => 즉, 이 websocket은 "브라우저"에 있는 API이기 때문이다.
-        JSON.stringify(
-            {
-                type: "nickname",
-                payload: input.value
-            }
-        )
-    );
-    input.value = "";
-}
-
-function handleChatSubmit(event) {
-    event.preventDefault();
-    const input = chatForm.querySelector("input");
-    socket.send(
-        JSON.stringify(
-            {
-                type: "chat",
-                payload: input.value
-            }
-        )
-    );
+    const input = form.querySelector("input");
+    socket.emit("enter_room", {payload: input.value}, () => {
+        console.log("server is done!")
+    }); // 세번째 파라미터는 callback이다. 서버가 이 callback을 받아서 호출하면, 브라워에서 함수가 실행되는 매직! Socket.io의 emit()은 파라미터 개수가 몇 개든 어떤 형태로든 넘길 수 있다.
     input.value = "";
 }

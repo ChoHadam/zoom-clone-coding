@@ -1,5 +1,8 @@
 import http from "http";
-import WebSocket from "ws";
+// socket.io는 websocket의 구현체가 아니다. 
+// 웹소켓을 일부 사용하면서 여러 기능을 제공하는 새로운 프레임워크다. (채팅방, 재연결 등)
+// 따라서, 만약 websocket 이용이 불가능해져도, socket.io는 다른 방법을 이용해서 계속해서 동작한다. (HTTP long-polling)
+import SocketIO from "socket.io"; 
 import express from "express";
 
 const app = express();
@@ -10,42 +13,19 @@ app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (_, res) => res.render("home"));
 app.get("/*", (_, res) => res.redirect("/"));
 
+const httpServer = http.createServer(app);
+const wsServer = SocketIO(httpServer);
+
+wsServer.on("connection", (socket) => {
+  
+  socket.on("enter_room", (msg, done) => {
+    console.log('msg', msg);
+    setTimeout(()=> {
+      done();
+    }, 15000);
+  }); 
+
+});
+
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
-
-const server = http.createServer(app); //서버에 접근할 수 있게 됨 = 이 서버에 웹소켓 만들 수 있게 됨
-const wss = new WebSocket.Server({ server }); // http 서버 우에 ws 서버를 올린다. 이렇게 인자로 server 넘기면 같은 서버에서 http와 ws 둘 다 돌릴 수 있게 된다. 두 개가 동일한 포트에 있길 바랄때 이렇게 쓴다.
-
-const sockets = []; // 연결된 소켓들을 저장하는 메모리 저장소.
-
-wss.on("connection", handleConnection); // on 메소드가 브라우제에서 벡엔드로 연결된 사람의 정보를 제공해주는데, 소켓에 담겨온다.
-
-server.listen(3000, handleListen);
-
-function onSocketClose() {
-  console.log("Disconnected from Browser ❌");
-}
-
-function handleConnection(socket) {
-  //여기서 소켓은 서버와 연결된 브라우저이다.
-  console.log("Connected to Browser ✔️");
-
-  sockets.push(socket);
-  socket["nickname"] = "Anonymous";
-
-  socket.on("close", onSocketClose);
-
-  socket.on("message", (msg) => {
-    const message = JSON.parse(msg);
-
-    switch (message.type) {
-      case "chat":
-        sockets.forEach((aSocket) =>
-          aSocket.send(`${socket.nickname} : ${message.payload}`),
-        );
-        break;
-      case "nickname":
-        socket["nickname"] = message.payload;
-        break; // case 마다 break로 끊어줘야 닉네임이 의도치않게 바뀌지 않는다. case문은 break를 만날때까지 동작하기 때문이다.
-    }
-  });
-}
+httpServer.listen(3000, handleListen);
