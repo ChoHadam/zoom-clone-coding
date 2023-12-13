@@ -18,11 +18,12 @@ const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
   
-  socket.on("enter_room", (msg, done) => {
-    console.log('msg', msg);
-    setTimeout(()=> {
-      done();
-    }, 15000);
+  socket.on("enter_room", (roomName, done) => {
+    // console.log('socket.rooms', socket.rooms); // Set {<socket.id>} (현재 속해있는 room들을 보여준다. 이미 자신의 socket id 이름의 방에 혼자 들어가있다.)
+    socket.join(roomName);
+    // console.log('socket.rooms', socket.rooms); // Set {<socket.id>, <roomName>}
+    done();
+    socket.to(roomName).emit("welcome");
   }); 
 
 });
