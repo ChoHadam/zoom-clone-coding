@@ -26,6 +26,26 @@ socket.on("bye", (nickname) => {
   addMessage(`${nickname} disconnected!`);
 });
 
+// 문제 1) rooms에 배열이 들어올때마다, 기존 roomList에 배열이 추가된다. 
+// => 매번 roomList를 수동으로 초기화하는 코드를 추가했다.
+// 문제 2) 빈 배열이 들어오면, 공백이 추가된다.
+// => 빈 배열이 들어오면 아무것도 하지 않는 로직을 추가했다.
+socket.on("room_changed", (rooms) => { 
+  console.log('[app.js] on "room_changed"');
+
+  const roomList = welcome.querySelector("ul"); 
+  roomList.innerText = ""; // 문제 1) 해결
+
+  if (rooms.length === 0) { // 문제 2) 해결
+    return;
+  }
+  
+  const ul = welcome.querySelector("ul");
+  const li = document.createElement("li");
+  li.innerText = rooms;
+  ul.appendChild(li);
+})
+
 function hadleWelcomeFormSubmit(event) {
   console.log("[app.js] in hadleWelcomeFormSubmit()");
   
@@ -76,7 +96,6 @@ function addMessage(msg) {
 
 function hadleNicknameFormSubmit(event) {
   console.log("[app.js] in hadleNicknameFormSubmit()");
-  console.log("event", event);
   
   event.preventDefault();
   const input = nicknameForm.querySelector("input");

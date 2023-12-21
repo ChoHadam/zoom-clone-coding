@@ -19,6 +19,8 @@ const wsServer = SocketIO(httpServer);
 wsServer.on("connection", (socket) => {
   socket["nickname"] = "Anonymous";
   
+  wsServer.sockets.emit("room_changed", getPublicRooms()); 
+  
   socket.on("enter_room", (roomName, done) => {
     console.log('[server.js] on "enter_room"');
   
@@ -26,6 +28,8 @@ wsServer.on("connection", (socket) => {
     done();
     
     socket.to(roomName).emit("welcome", socket["nickname"]);
+
+    wsServer.sockets.emit("room_changed", getPublicRooms()); 
   });
 
   socket.on("new_message", (message, roomName, done) => {
@@ -35,19 +39,40 @@ wsServer.on("connection", (socket) => {
     done();
   });
 
-  socket.on("disconnecting", () => {
+  socket.on("disconnecting", () => { // socket.io 제공 이벤트 중 하나. 소켓 접속이 끊어지는것을 감지하고, 끊어지기 "직전"에 이벤트를 발생시킨다.
     console.log('[server.js] on "disconnecting"');
     
     socket.rooms.forEach((room) => {
       socket.to(room).emit("bye", socket["nickname"]);
     });
-  }); // 소켓 접속이 끊어지는것을 감지한다.
+  });
+
+  socket.on("disconnect", () => { // socket.io 제공 이벤트 중 하나. 소켓 접속이 끊어지는것을 감지하고, 끊어진 "직후"에 이벤트를 발생시킨다.
+    console.log('[server.js] on "disconnect"');
+    
+    wsServer.sockets.emit("room_changed", getPublicRooms()); 
+  })
 
   socket.on("nickname", (nickname) => {
     console.log('[server.js] on "nickname"');
     socket["nickname"] = nickname;
   })
 });
+
+function getPublicRooms() {
+  console.log('[server.js] in "getPublicRooms"');
+
+  const {rooms, sids} = wsServer.sockets.adapter;
+  const publicRooms = [];
+  
+  rooms.forEach((_, key) => {
+    if (sids.get(key) === undefined) {
+      publicRooms.push(key);
+    }
+  })
+
+  return publicRooms;
+}
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 httpServer.listen(3000, handleListen);
