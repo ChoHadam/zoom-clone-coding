@@ -17,21 +17,36 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
+  socket["nickname"] = "Anonymous";
+  
   socket.on("enter_room", (roomName, done) => {
+    console.log('[server.js] on "enter_room"');
+  
     socket.join(roomName);
     done();
-    socket.to(roomName).emit("welcome");
+    
+    socket.to(roomName).emit("welcome", socket["nickname"]);
   });
 
-  socket.on("new_message", (message, roomName) => {
-    socket.to(roomName).emit("new_message", message);
+  socket.on("new_message", (message, roomName, done) => {
+    console.log('[server.js] on "new_message"');
+    
+    socket.to(roomName).emit("new_message", `${socket["nickname"]}: ${message}`);
+    done();
   });
 
   socket.on("disconnecting", () => {
+    console.log('[server.js] on "disconnecting"');
+    
     socket.rooms.forEach((room) => {
-      socket.to(room).emit("bye");
+      socket.to(room).emit("bye", socket["nickname"]);
     });
   }); // 소켓 접속이 끊어지는것을 감지한다.
+
+  socket.on("nickname", (nickname) => {
+    console.log('[server.js] on "nickname"');
+    socket["nickname"] = nickname;
+  })
 });
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
