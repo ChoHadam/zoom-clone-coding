@@ -2,7 +2,8 @@ import http from "http";
 // socket.io는 websocket의 구현체가 아니다.
 // 웹소켓을 일부 사용하면서 여러 기능을 제공하는 새로운 프레임워크다. (채팅방, 재연결 등)
 // 따라서, 만약 websocket 이용이 불가능해져도, socket.io는 다른 방법을 이용해서 계속해서 동작한다. (HTTP long-polling)
-import SocketIO from "socket.io";
+import {Server} from "socket.io";
+import {instrument} from "@socket.io/admin-ui"; // 공식 문서 참고: https://socket.io/docs/v4/admin-ui/
 import express from "express";
 
 const app = express();
@@ -14,7 +15,16 @@ app.get("/", (_, res) => res.render("home"));
 app.get("/*", (_, res) => res.redirect("/"));
 
 const httpServer = http.createServer(app);
-const wsServer = SocketIO(httpServer);
+const wsServer = new Server(httpServer, {
+  cors: {
+    origin: ["https://admin.socket.io"],
+    credentials: true
+  }
+});
+instrument(wsServer, {
+  auth: false,
+  mode: "development",
+});
 
 wsServer.on("connection", (socket) => {
   socket["nickname"] = "Anonymous";
