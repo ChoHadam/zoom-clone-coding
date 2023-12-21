@@ -18,16 +18,15 @@ const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
   socket["nickname"] = "Anonymous";
-  
   wsServer.sockets.emit("room_changed", getPublicRooms()); 
   
   socket.on("enter_room", (roomName, done) => {
     console.log('[server.js] on "enter_room"');
   
     socket.join(roomName);
-    done();
+    done(getRoomSize(roomName));
     
-    socket.to(roomName).emit("welcome", socket["nickname"]);
+    socket.to(roomName).emit("welcome", socket["nickname"], getRoomSize(roomName));
 
     wsServer.sockets.emit("room_changed", getPublicRooms()); 
   });
@@ -43,7 +42,7 @@ wsServer.on("connection", (socket) => {
     console.log('[server.js] on "disconnecting"');
     
     socket.rooms.forEach((room) => {
-      socket.to(room).emit("bye", socket["nickname"]);
+      socket.to(room).emit("bye", socket["nickname"], getRoomSize(room)-1);
     });
   });
 
@@ -60,7 +59,7 @@ wsServer.on("connection", (socket) => {
 });
 
 function getPublicRooms() {
-  console.log('[server.js] in "getPublicRooms"');
+  console.log('[server.js] in "getPublicRooms()"');
 
   const {rooms, sids} = wsServer.sockets.adapter;
   const publicRooms = [];
@@ -72,6 +71,14 @@ function getPublicRooms() {
   })
 
   return publicRooms;
+}
+
+function getRoomSize(roomName) {
+  console.log('[server.js] in "getRoomSize()"');
+  
+  const {rooms} = wsServer.sockets.adapter;
+  
+  return rooms.get(roomName).size;
 }
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);

@@ -14,16 +14,20 @@ let roomName;
 welcomeForm.addEventListener("submit", hadleWelcomeFormSubmit);
 nicknameForm.addEventListener("submit", hadleNicknameFormSubmit);
 
-socket.on("welcome", (nickname) => {
+socket.on("welcome", (nickname, roomSize) => {
   console.log('[app.js] on "welcome"');
+  
   addMessage(`${nickname} joined!`);
+  changeRoomSize(roomSize);
 });
 
 socket.on("new_message", (msg) => addMessage(msg));
 
-socket.on("bye", (nickname) => {
+socket.on("bye", (nickname, roomSize) => {
   console.log('[app.js] on "bye"');
+  
   addMessage(`${nickname} disconnected!`);
+  changeRoomSize(roomSize);
 });
 
 // 문제 1) rooms에 배열이 들어올때마다, 기존 roomList에 배열이 추가된다. 
@@ -59,13 +63,13 @@ function hadleWelcomeFormSubmit(event) {
   input.value = "";
 }
 
-function showRoom() {
+function showRoom(roomSize) {
   console.log("[app.js] in showRoom()");
   
   welcome.hidden = true;
   room.hidden = false;
   const h3 = room.querySelector("h3");
-  h3.innerText = `Room ${roomName}`;
+  h3.innerText = `Room ${roomName} (${roomSize})`;
   
   roomForm.addEventListener("submit", handleMessageSubmit);
 }
@@ -102,4 +106,9 @@ function hadleNicknameFormSubmit(event) {
   const content = input.value;
     
   socket.emit("nickname", content); 
+}
+
+function changeRoomSize(roomSize) {
+  const h3 = room.querySelector("h3");
+  h3.innerText = `Room ${roomName} (${roomSize})`;
 }
